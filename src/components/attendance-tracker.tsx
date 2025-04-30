@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, XCircle, Loader2, CalendarIcon, Hourglass, Check, HelpCircle } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, CalendarIcon, Hourglass, Check, X, HelpCircle } from "lucide-react"; // Import X icon
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
