@@ -1,37 +1,51 @@
 "use client";
 
 import * as React from "react";
-import { getStudentsAction } from "@/app/actions";
+import { getStudentsAction, getTotalPeriodsHeldAction } from "@/app/actions";
 import type { Student } from "@/types/student";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Loader2, TrendingUp, AlertTriangle } from "lucide-react";
+import { Check, X, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { format } from 'date-fns'; // Import format
 
 const ELIGIBILITY_THRESHOLD = 75;
 
 export default function EligibilityList() {
   const [students, setStudents] = React.useState<Student[]>([]);
+  const [totalPeriodsHeld, setTotalPeriodsHeld] = React.useState<number>(0);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    async function fetchStudents() {
+    async function fetchData() {
       setLoading(true);
-      const fetchedStudents = await getStudentsAction();
+      const [fetchedStudents, fetchedTotalPeriods] = await Promise.all([
+        getStudentsAction(),
+        // Calculate total periods up to today, last period (adjust if needed)
+        // Assuming 4 periods per day, change if necessary
+        getTotalPeriodsHeldAction(new Date(), 4)
+      ]);
       setStudents(fetchedStudents);
+      setTotalPeriodsHeld(fetchedTotalPeriods);
       setLoading(false);
     }
-    fetchStudents();
+    fetchData();
   }, []); // Fetch on mount
 
-  const calculateEligibility = (student: Student): { percentage: number; eligible: boolean } => {
-    if (student.totalClasses === 0) {
-      return { percentage: 0, eligible: false }; // Or handle as per requirements (e.g., N/A, or eligible by default)
+  const calculateEligibility = (student: Student): { percentage: number; eligible: boolean; attended: number } => {
+    if (totalPeriodsHeld === 0) {
+      return { percentage: 0, eligible: false, attended: 0 }; // Or handle as per requirements
     }
-    const percentage = (student.attendedClasses / student.totalClasses) * 100;
-    return { percentage: Math.round(percentage), eligible: percentage >= ELIGIBILITY_THRESHOLD };
+    // Count attended classes from the student's attendance records
+    const attendedClasses = student.attendance.filter(record => record.present).length;
+    const percentage = (attendedClasses / totalPeriodsHeld) * 100;
+    return {
+        percentage: Math.round(percentage),
+        eligible: percentage >= ELIGIBILITY_THRESHOLD,
+        attended: attendedClasses
+    };
   };
 
    if (loading) {
@@ -39,7 +53,7 @@ export default function EligibilityList() {
         <Card className="w-full shadow-md">
             <CardHeader>
                 <CardTitle className="text-2xl text-foreground">Exam Eligibility Status</CardTitle>
-                 <CardDescription>Students meeting the {ELIGIBILITY_THRESHOLD}% attendance requirement.</CardDescription>
+                 <CardDescription>Checking eligibility based on {ELIGIBILITY_THRESHOLD}% attendance requirement.</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center items-center h-40">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -68,7 +82,9 @@ export default function EligibilityList() {
     <Card className="w-full shadow-md">
       <CardHeader>
         <CardTitle className="text-2xl text-foreground">Exam Eligibility Status</CardTitle>
-        <CardDescription>Students meeting the {ELIGIBILITY_THRESHOLD}% attendance requirement.</CardDescription>
+        <CardDescription>
+            Eligibility based on {ELIGIBILITY_THRESHOLD}% attendance out of {totalPeriodsHeld} periods held so far.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <TooltipProvider>
@@ -83,7 +99,7 @@ export default function EligibilityList() {
           </TableHeader>
           <TableBody>
             {students.map((student) => {
-              const { percentage, eligible } = calculateEligibility(student);
+              const { percentage, eligible, attended } = calculateEligibility(student);
               return (
                 <TableRow key={student.id}>
                   <TableCell className="font-medium">{student.id}</TableCell>
@@ -97,7 +113,7 @@ export default function EligibilityList() {
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{student.attendedClasses} / {student.totalClasses} classes attended</p>
+                        <p>{attended} / {totalPeriodsHeld} periods attended</p>
                       </TooltipContent>
                     </Tooltip>
                   </TableCell>

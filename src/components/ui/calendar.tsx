@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react"; // Import CalendarIcon
 import { DayPicker } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
@@ -60,6 +60,8 @@ function Calendar({
         IconRight: ({ className, ...props }) => (
           <ChevronRight className={cn("h-4 w-4", className)} {...props} />
         ),
+        // You can optionally use the CalendarIcon here if needed for other parts,
+        // but DayPicker manages its internal icons.
       }}
       {...props}
     />
@@ -67,4 +69,4 @@ function Calendar({
 }
 Calendar.displayName = "Calendar"
 
-export { Calendar }
+export { Calendar, CalendarIcon } // Export CalendarIcon as well
